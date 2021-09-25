@@ -8,6 +8,7 @@ app = Flask(__name__)
 
 
 def count_execution_time(func):
+    @wraps(func)
     def wrapper(*args, **kwargs):
         start = time.monotonic()
         data = func()
