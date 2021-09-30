@@ -1,37 +1,37 @@
-from flask import Flask, render_template
-import uuid
-import time
-import datetime
-from functools import wraps
+from flask import Flask, render_template, session, redirect, url_for, request
 
 app = Flask(__name__)
+app.secret_key = b'd840d014a1de8cbb5b53f77a2c37e34c'
 
 
-def count_execution_time(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        start = time.monotonic()
-        data = func()
-        end = time.monotonic()
-        execution_time = end - start
-        data['execution_time'] = execution_time
-        return data
-    return wrapper
+@app.route("/")
+def index():
+    if 'user_name' not in session:
+        return redirect(url_for('login'))
+    else:
+        session['visits_count'] += 1
+        visits_count = session['visits_count']
+        user_name = session['user_name']
+        return render_template('count_visits_page.html', user_name=user_name, visits_count=visits_count)
 
 
-@count_execution_time
-def generate_data():
-    time.sleep(1)
-    return {'uuid': uuid.uuid4(),
-            'execution_time': None,
-            'date': datetime.datetime.now()}
+@app.route("/login", methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST' and 'user_name' not in session:
+        user_name = request.form['user_name']
+        session['user_name'] = user_name
+        session['visits_count'] = 0
+        return render_template('welcome_page.html', user_name=user_name)
+    elif 'user_name' in session:
+        return render_template('welcome_page.html', user_name=session['user_name'])
+    else:
+        return render_template('login_page.html')
 
 
-@app.route("/get_data/<int:request_count>")
-def get_data(request_count=1):
-    data_list = []
-    for _ in range(request_count):
-        data = generate_data()
-        data_string = f'{data["uuid"]}:{data["execution_time"]} s:{data["date"]}'
-        data_list.append(data_string)
-    return render_template('get_data.html', data_list=data_list)
+@app.route("/logout")
+def logout():
+    session.pop('user_name')
+    session.pop('visits_count')
+    return redirect(url_for('login'))
+
+
