@@ -30,8 +30,8 @@ def login():
 
 @app.route("/logout")
 def logout():
-    session.pop('user_name')
-    session.pop('visits_count')
+    'user_name' in session and session.pop('user_name')
+    'visits_count' in session and session.pop('visits_count')
     return redirect(url_for('login'))
 
 
